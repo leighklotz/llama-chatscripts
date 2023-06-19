@@ -1,6 +1,9 @@
 # llama-chatscripts
 scripts and prompts for llama.cpp
 
+# setup
+- https://github.com/leighklotz/llm-support
+  
 # quantizing
 best to download them from HF but if not, consult this:
 
