@@ -3,7 +3,7 @@
 BASEDIR="$(dirname $(readlink -f "$0"))"
 cd ${BASEDIR}/..
 
-MODEL=${MODEL::-weights/vicuna/Wizard-Vicuna-30B-Uncensored.ggmlv3.q5_K_M.bin}
+MODEL=${MODEL:-weights/vicuna/Wizard-Vicuna-30B-Uncensored.ggmlv3.q5_K_M.bin}
 PROMPT_TEMPLATE=${PROMPT_TEMPLATE:-./chatscripts/prompts/chat-with-vicuna-v1.txt}
 
 USER_NAME=${USER_NAME:-USER}
