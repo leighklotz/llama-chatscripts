@@ -12,18 +12,13 @@ AI_NAME=${AI_NAME:-ChatLLaMa}
 PROGRAM=${PROGRAM:-./llama.cpp/main}
 N_CORE=${N_CORE:-8}
 N_PREDICTS=${N_PREDICTS:-2048}
-GPU=${GPU:-}
+N_GPU_LAYERS=${N_GPU_LAYERS:-0}
 
 # orig: --top_k 40 --top_p 0.5, no --mirostat 1
-if [ "$GPU" == "" ];
-then
-    echo '* No $GPU set'
-    GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --mlock }
-else
-    echo "* Using GPU"
-    # make LLAMA_CUBLAS=1
-    GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --n-gpu-layers 50 }
-fi
+GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input }
+
+echo "* N_GPU_LAYERS=$N_GPU_LAYERS"
+# make LLAMA_CUBLAS=1
 
 DATE_TIME=$(date +%H:%M)
 DATE_YEAR=$(date +%Y)
@@ -55,6 +50,7 @@ then
     ${PROGRAM} \
 	--model ${MODEL} \
         ${GEN_OPTIONS} \
+	--n-gpu-layers $N_GPU_LAYERS \
         --file "${TRAIN_PROMPT_FILE}" \
 	--prompt-cache "${PROMPT_CACHE_FILE}" \
 	--reverse-prompt "${USER_NAME}:" \
@@ -79,6 +75,7 @@ ${PROGRAM} \
     --model ${MODEL} \
     --threads ${N_CORE} \
     --interactive \
+    --n-gpu-layers $N_GPU_LAYERS \
     --file "${PROMPT_FILE}" \
     --prompt-cache "${PROMPT_CACHE_FILE}" \
     --prompt-cache-ro \
