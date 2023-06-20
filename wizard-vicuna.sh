@@ -3,21 +3,30 @@
 BASEDIR="$(dirname $(readlink -f "$0"))"
 cd ${BASEDIR}/..
 
-MODEL=${MODEL:-weights/vicuna/Wizard-Vicuna-30B-Uncensored.ggmlv3.q5_K_M.bin}
+#MODEL=${MODEL:-weights/vicuna/Wizard-Vicuna-30B-Uncensored.ggmlv3.q5_K_M.bin}
+MODEL=${MODEL:-weights.tensor/vicuna/Wizard-Vicuna-30B-Uncensored.ggmlv3.q5_K_M.bin}
 PROMPT_TEMPLATE=${PROMPT_TEMPLATE:-./chatscripts/prompts/chat-with-vicuna-v1.txt}
 
 USER_NAME=${USER_NAME:-USER}
 AI_NAME=${AI_NAME:-ChatLLaMa}
-PROGRAM=./llama.cpp/main
-
-N_THREAD=${N_THREAD:-8}
+PROGRAM=${PROGRAM:-./llama.cpp/main}
+N_CORE=${N_CORE:-8}
 N_PREDICTS=${N_PREDICTS:-2048}
+GPU=${GPU:-}
 
 # orig: --top_k 40 --top_p 0.5, no --mirostat 1
-GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --mlock }
+if [ "$GPU" == "" ];
+then
+    echo 'No $GPU set'
+    GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --mlock }
+else
+    echo "Using GPU"
+    # make LLAMA_CUBLAS=1
+    GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --n-gpu-layers 50 }
+fi
+
 DATE_TIME=$(date +%H:%M)
 DATE_YEAR=$(date +%Y)
-N_CORE=12
 
 PROMPT_FILE=$(mktemp -t llamacpp_prompt.XXXXXXX.txt)
 
@@ -28,7 +37,8 @@ sed -e "s/\[\[USER_NAME\]\]/$USER_NAME/g" \
     $PROMPT_TEMPLATE > $PROMPT_FILE
 
 PROMPT_HASH=$(md5sum ${PROMPT_FILE} | cut -f 1 -d' ')
-PROMPT_CACHE_FILE="/tmp/llamacpp_prompt.${PROMPT_HASH}.bin"
+MODEL_NAME_HASH=$(echo -n "${MODEL##*/}" | md5sum | cut -f 1 -d' ')
+PROMPT_CACHE_FILE="/tmp/llamacpp_prompt.${PROMPT_HASH}_${MODEL_NAME_HASH}.bin"
 
 if [[ ! -e "$PROMPT_CACHE_FILE" ]];
 then
@@ -74,3 +84,6 @@ ${PROGRAM} \
     --in-prefix ' ' \
     ${GEN_OPTIONS} \
     ${*}
+
+
+ #./llama.cpp/main -m weights/vicuna/Wizard-Vicuna-7B-Uncensored.ggmlv3.q5_K_M.bin -n 1024 -p "Write 10 different ways on how to implement ML with DevOps: 1." --ngl 32
