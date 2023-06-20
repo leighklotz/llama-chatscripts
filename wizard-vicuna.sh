@@ -17,10 +17,10 @@ GPU=${GPU:-}
 # orig: --top_k 40 --top_p 0.5, no --mirostat 1
 if [ "$GPU" == "" ];
 then
-    echo 'No $GPU set'
+    echo '* No $GPU set'
     GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --mlock }
 else
-    echo "Using GPU"
+    echo "* Using GPU"
     # make LLAMA_CUBLAS=1
     GEN_OPTIONS=${GEN_OPTIONS:---ctx_size 2048 --temp 0.7 --repeat_last_n 256 --batch_size 32 --repeat_penalty 1.17647 --top_k 0 --top_p 0 --mirostat 2 --mirostat-lr 0.05 --mirostat-ent 3.0 --multiline-input --n-gpu-layers 50 }
 fi
@@ -42,13 +42,13 @@ PROMPT_CACHE_FILE="/tmp/llamacpp_prompt.${PROMPT_HASH}_${MODEL_NAME_HASH}.bin"
 
 if [[ ! -e "$PROMPT_CACHE_FILE" ]];
 then
-    echo "Prompt cache $PROMPT_CACHE_FILE does not exist, building with $PROMPT_FILE..."
+    echo "* Prompt cache $PROMPT_CACHE_FILE does not exist, building with $PROMPT_FILE..."
     # Default batch_size to 8 here for better user feedback during initial prompt processing
     # 2>>"$LOG" 
     # Prompt for cache needs space and newline, but prompt for interactive ends with 'USER:' no space
 
     TRAIN_PROMPT_FILE="$(mktemp -t llamacpp_prompt.XXXXXXX.txt)"
-    echo "Creating ${TRAIN_PROMPT_FILE}"
+    echo "* Creating ${TRAIN_PROMPT_FILE}"
     cp "${PROMPT_FILE}" "${TRAIN_PROMPT_FILE}"
     echo -e " Thank you.\n" >> "${TRAIN_PROMPT_FILE}"
     set -x
@@ -61,18 +61,20 @@ then
 	--in-prefix ' ' \
         --batch_size 8 \
         --n_predict 1
+    set +x
     echo
-    echo 'Done!'
+    echo '* Done!'
 fi
 
 if [[ ! -e "$PROMPT_CACHE_FILE" ]];
 then
     echo "* ERROR: ${PROMPT_CACHE_FILE} was not created"
     exit 1
+else
+    echo "* Using prompt cache ${PROMPT_CACHE_FILE}"
 fi
 
 set -x
-#   --color
 ${PROGRAM} \
     --model ${MODEL} \
     --threads ${N_CORE} \
@@ -84,6 +86,6 @@ ${PROGRAM} \
     --in-prefix ' ' \
     ${GEN_OPTIONS} \
     ${*}
+set -x
+#   --color
 
-
- #./llama.cpp/main -m weights/vicuna/Wizard-Vicuna-7B-Uncensored.ggmlv3.q5_K_M.bin -n 1024 -p "Write 10 different ways on how to implement ML with DevOps: 1." --ngl 32
